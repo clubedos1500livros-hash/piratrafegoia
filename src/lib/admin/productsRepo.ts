@@ -1,5 +1,6 @@
 import { mockProducts } from '@/data/menu';
 import { scopeProducts } from '@/lib/restaurant/scope';
+import { saveJson } from '@/lib/admin/jsonStorage';
 
 import { emitAdminHub } from '@/lib/tenant/events';
 import { buildTenantStorageKeys } from '@/lib/tenant/storageKeys';

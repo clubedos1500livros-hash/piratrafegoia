@@ -39,11 +39,12 @@ export function sbSubscribeOrders(
   restaurantId: string,
   onChange: () => void,
 ): { unsubscribe: () => void } {
-  if (!supabase) {
+  const client = supabase;
+  if (!client) {
     return { unsubscribe: () => {} };
   }
 
-  const channel = supabase
+  const channel = client
     .channel(`orders:${restaurantId}`)
     .on(
       'postgres_changes',
@@ -57,14 +58,11 @@ export function sbSubscribeOrders(
         onChange();
       },
     )
-    if (!supabase) {
-      throw new Error("Supabase não inicializado");
-
     .subscribe();
 
   return {
     unsubscribe: () => {
-      void supabase!.removeChannel(channel);
+      void client.removeChannel(channel);
     },
   };
 }
