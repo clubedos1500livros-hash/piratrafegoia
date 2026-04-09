@@ -1,5 +1,5 @@
 import { scopeCustomers } from '@/lib/restaurant/scope';
-import { loadJson, saveJson } from '@/lib/admin/jsonStorage';
+import { saveJson } from '@/lib/admin/jsonStorage';
 import { emitAdminHub } from '@/lib/tenant/events';
 import { buildTenantStorageKeys } from '@/lib/tenant/storageKeys';
 import { isSupabaseConfigured } from '@/lib/supabase';
