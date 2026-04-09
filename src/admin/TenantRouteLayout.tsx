@@ -7,13 +7,15 @@ import { migrateLegacyStorageToTenant } from '@/lib/tenant/migrateLegacy';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { seedRemoteRestaurant } from '@/lib/supabase/seedRemote';
 import { restaurantExistsUnified } from '@/lib/tenant/registry';
-import { sanitizeRestaurantId } from '@/lib/tenant/publicTenant';
+import { sanitizeRestaurantId, setPublicRestaurantId } from '@/lib/tenant/publicTenant';
 import { TenantProvider, useTenant } from '@/admin/tenant/TenantContext';
 
 function TenantLifecycle() {
   const { restaurantId } = useTenant();
 
   useEffect(() => {
+    // Keep public menu pinned to the tenant being managed in this browser.
+    setPublicRestaurantId(restaurantId);
     migrateLegacyStorageToTenant(restaurantId);
     if (isSupabaseConfigured()) {
       void seedRemoteRestaurant(restaurantId);

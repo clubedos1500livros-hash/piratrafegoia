@@ -41,3 +41,35 @@ export async function sbSyncProducts(restaurantId: string, products: Product[]):
   const { error: upErr } = await supabase.from('products').upsert(rows, { onConflict: 'id' });
   if (upErr) throw upErr;
 }
+
+export function sbSubscribeProducts(
+  restaurantId: string,
+  onChange: () => void,
+): { unsubscribe: () => void } {
+  const client = supabase;
+  if (!client) {
+    return { unsubscribe: () => {} };
+  }
+
+  const channel = client
+    .channel(`products:${restaurantId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'products',
+        filter: `restaurant_id=eq.${restaurantId}`,
+      },
+      () => {
+        onChange();
+      },
+    )
+    .subscribe();
+
+  return {
+    unsubscribe: () => {
+      void client.removeChannel(channel);
+    },
+  };
+}
