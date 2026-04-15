@@ -4,11 +4,14 @@ import { HeaderLogo3D } from '@/components/HeaderLogo3D';
 import { ProductCard } from '@/components/ProductCard';
 import { ProductFilter } from '@/components/ProductFilter';
 import { useProducts } from '@/context/ProductsContext';
+import { getPublicRestaurantId } from '@/lib/tenant/publicTenant';
+import { loadTenantDataOrLegacy } from '@/lib/admin/tenantDataRepo';
 
 export function HomePage() {
   const { products, loading, error } = useProducts();
   const [category, setCategory] = useState<string>('todos');
   const [query, setQuery] = useState('');
+  const [company] = useState(() => loadTenantDataOrLegacy(getPublicRestaurantId()).company);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -43,13 +46,26 @@ export function HomePage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="relative left-1/2 h-[55vh] w-screen -translate-x-1/2 overflow-hidden">
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex justify-center px-4 pt-4 sm:pt-6">
-          <HeaderLogo3D className="drop-shadow-lg" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex flex-col items-center px-4 pt-4 sm:pt-6">
+          {company.logo_image_url ? (
+            <img
+              src={company.logo_image_url}
+              alt={company.name}
+              className="mb-4 h-16 w-auto rounded-2xl border border-white/10 bg-black/50 object-contain"
+            />
+          ) : (
+            <HeaderLogo3D className="drop-shadow-lg" />
+          )}
         </div>
 
-        <video className="h-full w-full scale-110 object-cover" autoPlay muted loop playsInline>
-          <source src="/video360.mp4" type="video/mp4" />
-        </video>
+        <video
+          className="h-full w-full scale-110 object-cover"
+          autoPlay
+          muted
+          loop
+          playsInline
+          src={company.logo_video_url || '/video360.mp4'}
+        />
       </div>
 
       <div className="px-4">

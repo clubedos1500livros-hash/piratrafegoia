@@ -1,14 +1,14 @@
 import { mockProducts } from '@/data/menu';
 import { scopeProducts } from '@/lib/restaurant/scope';
-import { saveJson } from '@/lib/admin/jsonStorage';
-
 import { emitAdminHub } from '@/lib/tenant/events';
 import { buildTenantStorageKeys } from '@/lib/tenant/storageKeys';
-import { isSupabaseConfigured } from '@/lib/supabase';
-import { sbFetchProducts, sbSyncProducts } from '@/lib/supabase/productsApi';
+import { loadTenantData, loadTenantDataOrLegacy, saveTenantData } from '@/lib/admin/tenantDataRepo';
 import type { Product } from '@/types/product';
 
 export function loadLocalProducts(restaurantId: string): Product[] | null {
+  const existing = loadTenantData(restaurantId);
+  if (existing !== null) return existing.products;
+
   const k = buildTenantStorageKeys(restaurantId);
   try {
     const raw = localStorage.getItem(k.products);
@@ -23,11 +23,18 @@ export function loadLocalProducts(restaurantId: string): Product[] | null {
 
 export function saveLocalProducts(restaurantId: string, products: Product[]): void {
   const k = buildTenantStorageKeys(restaurantId);
-  saveJson(k.products, scopeProducts(products, k.restaurantId));
+  const data = loadTenantDataOrLegacy(restaurantId);
+  saveTenantData(restaurantId, {
+    ...data,
+    products: scopeProducts(products, k.restaurantId),
+  });
   emitAdminHub(k.restaurantId, 'products');
 }
 
 export function getAdminProductsOrInitial(restaurantId: string): Product[] {
+  const data = loadTenantData(restaurantId);
+  if (data !== null) return data.products;
+
   const k = buildTenantStorageKeys(restaurantId);
   const local = loadLocalProducts(restaurantId);
   if (local !== null) return local;
@@ -35,9 +42,6 @@ export function getAdminProductsOrInitial(restaurantId: string): Product[] {
 }
 
 export async function loadProductsForAdmin(restaurantId: string): Promise<Product[]> {
-  if (isSupabaseConfigured()) {
-    return sbFetchProducts(restaurantId);
-  }
   return getAdminProductsOrInitial(restaurantId);
 }
 
@@ -45,11 +49,6 @@ export async function persistProductsForAdmin(
   restaurantId: string,
   products: Product[],
 ): Promise<void> {
-  if (isSupabaseConfigured()) {
-    await sbSyncProducts(restaurantId, products);
-    emitAdminHub(restaurantId, 'products');
-    return;
-  }
   saveLocalProducts(restaurantId, products);
 }
 
@@ -66,9 +65,6 @@ export function deleteProduct(id: string, all: Product[]): Product[] {
 }
 
 export function newProductId(all: Product[]): string {
-  if (isSupabaseConfigured()) {
-    return crypto.randomUUID();
-  }
   const nums = all.map((p) => parseInt(p.id, 10)).filter((n) => !Number.isNaN(n));
   const max = nums.length ? Math.max(...nums) : 0;
   return String(max + 1);

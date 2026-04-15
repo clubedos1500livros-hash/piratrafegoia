@@ -1,30 +1,18 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { isSupabaseConfigured } from '@/lib/supabase';
-import {
-  ensureDefaultTenants,
-  listRestaurantsUnified,
-  registerRestaurantUnified,
-} from '@/lib/tenant/registry';
+import { registerRestaurantUnified } from '@/lib/tenant/registry';
 import type { TenantRecord } from '@/lib/tenant/types';
 import { sanitizeTenantId } from '@/lib/tenant/publicTenant';
 
 export function TenantPortalPage() {
-  const [tenants, setTenants] = useState<TenantRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const reload = useCallback(async () => {
-    if (!isSupabaseConfigured()) {
-      ensureDefaultTenants();
-    }
-    const list = await listRestaurantsUnified();
-    setTenants(list);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    void reload();
-  }, [reload]);
+  const [tenants, setTenants] = useState<TenantRecord[]>([
+  { id: 'alexandre', name: 'Alexandre Lanches', created_at: new Date().toISOString() },
+  { id: 'rosa', name: 'Rosa Salgado', created_at: new Date().toISOString() },
+  { id: 'bar-do-ne', name: 'Bar do Nê', created_at: new Date().toISOString() },
+  { id: 'kajuba', name: 'Bar do Kajuba', created_at: new Date().toISOString() },
+  { id: 'paula', name: 'Paula Confeitaria', created_at: new Date().toISOString() },
+]);
 
   const [slug, setSlug] = useState('');
   const [name, setName] = useState('');
@@ -45,7 +33,7 @@ export function TenantPortalPage() {
     }
     setSlug('');
     setName('');
-    await reload();
+    setTenants((current) => [...current, row]);
   }
 
   return (
@@ -86,10 +74,6 @@ export function TenantPortalPage() {
             Cadastrar tenant
           </button>
         </form>
-
-        {loading ? (
-          <p className="text-center text-sm text-zinc-500">Carregando restaurantes…</p>
-        ) : null}
 
         <ul className="space-y-2">
           {tenants.map((t) => (

@@ -1,5 +1,5 @@
 import { mockProducts } from '@/data/menu';
-import { loadLocalProducts } from '@/lib/admin/productsRepo';
+import { loadTenantDataOrLegacy } from '@/lib/admin/tenantDataRepo';
 import { scopeProducts } from '@/lib/restaurant/scope';
 import { getPublicRestaurantId } from '@/lib/tenant/publicTenant';
 import { isSupabaseConfigured } from '@/lib/supabase';
@@ -10,8 +10,8 @@ export async function fetchProducts(): Promise<Product[]> {
   const restaurantId = getPublicRestaurantId();
 
   if (!isSupabaseConfigured()) {
-    const local = loadLocalProducts(restaurantId);
-    if (local !== null) return local;
+    const data = loadTenantDataOrLegacy(restaurantId);
+    if (data.products.length) return data.products;
     return scopeProducts(mockProducts, restaurantId);
   }
 
@@ -19,6 +19,8 @@ export async function fetchProducts(): Promise<Product[]> {
     return await sbFetchProducts(restaurantId);
   } catch (e) {
     console.warn('[products] Supabase error, usando mock local.', e);
+    const data = loadTenantDataOrLegacy(restaurantId);
+    if (data.products.length) return data.products;
     return scopeProducts(mockProducts, restaurantId);
   }
 }
