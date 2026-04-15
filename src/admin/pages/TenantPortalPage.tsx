@@ -10,7 +10,7 @@ export function TenantPortalPage() {
   { id: 'alexandre', name: 'Alexandre Lanches', created_at: new Date().toISOString() },
   { id: 'rosa', name: 'Rosa Salgado', created_at: new Date().toISOString() },
   { id: 'bar-do-ne', name: 'Bar do Nê', created_at: new Date().toISOString() },
-  { id: 'kajuba', name: 'Bar do Kajuba', created_at: new Date().toISOString() },
+  { id: 'Thiago', name: 'Bar do Thiago', created_at: new Date().toISOString() },
   { id: 'paula', name: 'Paula Confeitaria', created_at: new Date().toISOString() },
 ]);
 
@@ -41,7 +41,7 @@ export function TenantPortalPage() {
       <div className="mx-auto max-w-lg space-y-8">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-accent">SaaS multi-tenant</p>
-          <h1 className="mt-2 text-2xl font-bold text-white">Escolha o cliente</h1>
+          <h1 className="...">TESTE DEPLOY</h1>
           <p className="mt-2 text-sm text-zinc-400">
             Cada restaurante tem dados isolados por{' '}
             <code className="text-accent">restaurant_id</code>
