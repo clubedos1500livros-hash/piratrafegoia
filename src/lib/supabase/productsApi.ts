@@ -5,6 +5,7 @@ import type { Product } from '@/types/product';
 
 export async function sbFetchProducts(restaurantId: string): Promise<Product[]> {
   if (!supabase) return [];
+  console.log('[Supabase] fetch products for restaurant_id:', restaurantId);
   const { data, error } = await supabase
     .from('products')
     .select('*')
@@ -16,6 +17,7 @@ export async function sbFetchProducts(restaurantId: string): Promise<Product[]> 
 
 export async function sbSyncProducts(restaurantId: string, products: Product[]): Promise<void> {
   if (!supabase) return;
+  console.log('[Supabase] sync products for restaurant_id:', restaurantId);
   const scoped = scopeProducts(products, restaurantId);
 
   const { data: existing, error: selErr } = await supabase

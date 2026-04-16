@@ -3,6 +3,8 @@ import { scopeProducts } from '@/lib/restaurant/scope';
 import { emitAdminHub } from '@/lib/tenant/events';
 import { buildTenantStorageKeys } from '@/lib/tenant/storageKeys';
 import { loadTenantData, loadTenantDataOrLegacy, saveTenantData } from '@/lib/admin/tenantDataRepo';
+import { isSupabaseConfigured } from '@/lib/supabase';
+import { sbFetchProducts, sbSyncProducts } from '@/lib/supabase/productsApi';
 import type { Product } from '@/types/product';
 
 export function loadLocalProducts(restaurantId: string): Product[] | null {
@@ -42,6 +44,9 @@ export function getAdminProductsOrInitial(restaurantId: string): Product[] {
 }
 
 export async function loadProductsForAdmin(restaurantId: string): Promise<Product[]> {
+  if (isSupabaseConfigured()) {
+    return sbFetchProducts(restaurantId);
+  }
   return getAdminProductsOrInitial(restaurantId);
 }
 
@@ -49,6 +54,11 @@ export async function persistProductsForAdmin(
   restaurantId: string,
   products: Product[],
 ): Promise<void> {
+  if (isSupabaseConfigured()) {
+    await sbSyncProducts(restaurantId, products);
+    emitAdminHub(restaurantId, 'products');
+    return;
+  }
   saveLocalProducts(restaurantId, products);
 }
 

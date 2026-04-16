@@ -49,9 +49,11 @@ export function ProductsAdminPage() {
     };
   }, [restaurantId]);
 
-  function persist(next: Product[]) {
+  async function persist(next: Product[]) {
     setProducts(next);
-    void persistProductsForAdmin(restaurantId, next);
+    await persistProductsForAdmin(restaurantId, next);
+    const list = await loadProductsForAdmin(restaurantId);
+    setProducts(list);
   }
 
   function openNew() {
@@ -78,7 +80,7 @@ export function ProductsAdminPage() {
     setEditing(null);
   }
 
-  function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     if (!editing) return;
     if (!editing.name.trim()) {
@@ -112,7 +114,8 @@ export function ProductsAdminPage() {
     setSaving(true);
     setSaveMessage(null);
     try {
-      persist(upsertProduct(row, products));
+      console.log('[ProductsAdmin] save product restaurant_id:', restaurantId);
+      await persist(upsertProduct(row, products));
       setSaveMessage('✅ Produto salvo com sucesso');
       closeForm();
     } catch (err) {
@@ -123,10 +126,20 @@ export function ProductsAdminPage() {
     }
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     if (!window.confirm('Excluir este produto?')) return;
-    persist(deleteProduct(id, products));
-    closeForm();
+    setSaving(true);
+    setSaveMessage(null);
+    try {
+      await persist(deleteProduct(id, products));
+      setSaveMessage('✅ Produto excluído com sucesso');
+      closeForm();
+    } catch (err) {
+      console.error(err);
+      setSaveMessage('❌ Erro ao excluir produto');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
