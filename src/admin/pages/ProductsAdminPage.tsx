@@ -111,10 +111,16 @@ export function ProductsAdminPage() {
       video: cleanedVideo,
       videoType: cleanedVideo ? videoMode : undefined,
     };
+    if (!restaurantId?.trim()) {
+      console.error('SALVANDO PRODUTO COM restaurant_id: inválido', restaurantId);
+      setSaveMessage('❌ restaurant_id inválido. Não foi possível salvar o produto');
+      setSaving(false);
+      return;
+    }
     setSaving(true);
     setSaveMessage(null);
     try {
-      console.log('[ProductsAdmin] save product restaurant_id:', restaurantId);
+      console.log('SALVANDO PRODUTO COM restaurant_id:', restaurantId);
       await persist(upsertProduct(row, products));
       setSaveMessage('✅ Produto salvo com sucesso');
       closeForm();

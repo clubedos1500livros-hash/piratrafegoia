@@ -54,6 +54,10 @@ export async function persistProductsForAdmin(
   restaurantId: string,
   products: Product[],
 ): Promise<void> {
+  if (!restaurantId?.trim()) {
+    console.error('[ProductsRepo] restaurant_id inválido. Não será possível salvar produtos.', restaurantId);
+    throw new Error('restaurant_id inválido para salvar produtos');
+  }
   if (isSupabaseConfigured()) {
     await sbSyncProducts(restaurantId, products);
     emitAdminHub(restaurantId, 'products');

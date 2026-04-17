@@ -47,6 +47,8 @@ export function productToRow(p: Product, restaurantId: string): Record<string, u
     price: p.price,
     image_url: p.image_url || p.image || '',
     video_url: p.video_url ?? p.video ?? null,
+    image: p.image_url || p.image || '',
+    video: p.video_url ?? p.video ?? null,
     video_type: p.videoType ?? null,
     ingredients: p.ingredients ?? null,
     updated_at: new Date().toISOString(),

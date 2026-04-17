@@ -5,6 +5,10 @@ import type { Product } from '@/types/product';
 
 export async function sbFetchProducts(restaurantId: string): Promise<Product[]> {
   if (!supabase) return [];
+  if (!restaurantId?.trim()) {
+    console.error('[Supabase] fetch products failed: restaurant_id is invalid', restaurantId);
+    throw new Error('restaurant_id é obrigatório para buscar produtos');
+  }
   console.log('[Supabase] fetch products for restaurant_id:', restaurantId);
   const { data, error } = await supabase
     .from('products')
@@ -17,6 +21,10 @@ export async function sbFetchProducts(restaurantId: string): Promise<Product[]> 
 
 export async function sbSyncProducts(restaurantId: string, products: Product[]): Promise<void> {
   if (!supabase) return;
+  if (!restaurantId?.trim()) {
+    console.error('[Supabase] sync products failed: restaurant_id is invalid', restaurantId);
+    throw new Error('restaurant_id é obrigatório para salvar produtos');
+  }
   console.log('[Supabase] sync products for restaurant_id:', restaurantId);
   const scoped = scopeProducts(products, restaurantId);
 
