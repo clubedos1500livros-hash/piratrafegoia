@@ -10,7 +10,13 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/admin/*" element={<AdminApp />} />
+        import TesteSimples from './TesteSimples';
+
+function App() {
+  return <TesteSimples />;
+}
+
+export default App;
         <Route
           path="/"
           element={
