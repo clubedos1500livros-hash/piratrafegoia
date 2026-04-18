@@ -1,12 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTenant } from '@/admin/tenant/TenantContext';
-import {
-  deleteProduct,
-  loadProductsForAdmin,
-  newProductId,
-  persistProductsForAdmin,
-  upsertProduct,
-} from '@/lib/admin/productsRepo';
+import { deleteProduct, loadProductsForAdmin, newProductId, persistProductsForAdmin } from '@/lib/admin/productsRepo';
 import { formatBRL } from '@/lib/money';
 import { isValidVideoUrl, normalizeVideoUrl } from '@/lib/video';
 import type { Product } from '@/types/product';
@@ -39,14 +33,15 @@ export function ProductsAdminPage() {
     if (editing) setIngDraft((editing.ingredients ?? []).join('\n'));
   }, [editing]);
 
+  const loadProducts = () => {
+    const id = restaurantId || 'default';
+    const key = `products_${id}`;
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : [];
+  };
+
   useEffect(() => {
-    let cancelled = false;
-    void loadProductsForAdmin(restaurantId).then((list) => {
-      if (!cancelled) setProducts(list);
-    });
-    return () => {
-      cancelled = true;
-    };
+    setProducts(loadProducts());
   }, [restaurantId]);
 
   async function persist(next: Product[]) {
@@ -80,55 +75,20 @@ export function ProductsAdminPage() {
     setEditing(null);
   }
 
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    if (!editing) return;
-    if (!editing.name.trim()) {
-      setSaveMessage('❌ Informe um nome para o produto');
-      return;
-    }
-    if (!editing.price || editing.price <= 0) {
-      setSaveMessage('❌ Informe um preço válido');
-      return;
-    }
-    const ing = ingDraft
-      .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const cleanedVideo =
-      videoMode === 'link'
-        ? normalizeVideoUrl(String(editing.video_url || '').trim())
-        : normalizeVideoUrl(editing.video_url ?? null);
-    if (videoMode === 'link' && cleanedVideo && !isValidVideoUrl(cleanedVideo)) {
-      setSaveMessage('❌ Link de vídeo inválido. Use .mp4, .webm ou Cloudinary');
-      return;
-    }
-    const row: Product = {
-      ...editing,
-      restaurant_id: restaurantId,
-      ingredients: ing.length ? ing : null,
-      video_url: cleanedVideo,
-      video: cleanedVideo,
-      videoType: cleanedVideo ? videoMode : undefined,
-    };
-    if (!restaurantId?.trim()) {
-      console.error('SALVANDO PRODUTO COM restaurant_id: inválido', restaurantId);
-      setSaveMessage('❌ restaurant_id inválido. Não foi possível salvar o produto');
-      setSaving(false);
-      return;
-    }
-    setSaving(true);
-    setSaveMessage(null);
+  const handleSave = (product: Product) => {
     try {
-      console.log('SALVANDO PRODUTO COM restaurant_id:', restaurantId);
-      await persist(upsertProduct(row, products));
-      setSaveMessage('✅ Produto salvo com sucesso');
-      closeForm();
+      const id = restaurantId || 'default';
+      const key = `products_${id}`;
+      const existing = localStorage.getItem(key);
+      const list = existing ? JSON.parse(existing) : [];
+      const updated = [...list, product];
+      localStorage.setItem(key, JSON.stringify(updated));
+      console.log('SALVO LOCAL:', updated);
+      alert('Produto salvo com sucesso');
+      window.location.reload();
     } catch (err) {
-      console.error(err);
-      setSaveMessage('❌ Erro ao salvar produto');
-    } finally {
-      setSaving(false);
+      console.error('ERRO AO SALVAR:', err);
+      alert('Erro ao salvar produto');
     }
   }
 
@@ -225,7 +185,13 @@ export function ProductsAdminPage() {
             <h2 className="text-lg font-semibold text-white">
               {products.some((p) => p.id === editing.id) ? 'Editar produto' : 'Cadastrar Produtos'}
             </h2>
-            <form onSubmit={handleSave} className="mt-4 space-y-3">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (editing) handleSave(editing);
+              }}
+              className="mt-4 space-y-3"
+            >
               <label className="block text-sm">
                 <span className="text-zinc-400">Nome</span>
                 <input
