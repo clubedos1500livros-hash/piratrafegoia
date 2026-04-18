@@ -10,8 +10,6 @@ import {
 import { ADMIN_HUB, type AdminHubDetail } from '@/lib/tenant/events';
 import { getPublicRestaurantId } from '@/lib/tenant/publicTenant';
 import { fetchProducts } from '@/lib/products';
-import { isSupabaseConfigured } from '@/lib/supabase';
-import { sbSubscribeProducts } from '@/lib/supabase/productsApi';
 import type { Product } from '@/types/product';
 
 type ProductsState = {
@@ -24,7 +22,6 @@ type ProductsState = {
 
 const ProductsContext = createContext<ProductsState | null>(null);
 const POLL_MS_LOCAL = 5000;
-const POLL_MS_REMOTE_FALLBACK = 20000;
 
 export function ProductsProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
@@ -70,18 +67,9 @@ export function ProductsProvider({ children }: { children: ReactNode }) {
       () => {
         void refresh({ silent: true });
       },
-      isSupabaseConfigured() ? POLL_MS_REMOTE_FALLBACK : POLL_MS_LOCAL,
+      POLL_MS_LOCAL,
     );
     return () => window.clearInterval(id);
-  }, [refresh]);
-
-  useEffect(() => {
-    if (!isSupabaseConfigured()) return;
-    const restaurantId = getPublicRestaurantId();
-    const { unsubscribe } = sbSubscribeProducts(restaurantId, () => {
-      void refresh({ silent: true });
-    });
-    return () => unsubscribe();
   }, [refresh]);
 
   useEffect(() => {

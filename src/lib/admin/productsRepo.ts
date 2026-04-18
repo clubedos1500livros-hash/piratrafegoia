@@ -1,53 +1,30 @@
 import { mockProducts } from '@/data/menu';
-import { scopeProducts } from '@/lib/restaurant/scope';
 import { emitAdminHub } from '@/lib/tenant/events';
-import { buildTenantStorageKeys } from '@/lib/tenant/storageKeys';
-import { loadTenantData, loadTenantDataOrLegacy, saveTenantData } from '@/lib/admin/tenantDataRepo';
-import { isSupabaseConfigured } from '@/lib/supabase';
-import { sbFetchProducts, sbSyncProducts } from '@/lib/supabase/productsApi';
 import type { Product } from '@/types/product';
 
-export function loadLocalProducts(restaurantId: string): Product[] | null {
-  const existing = loadTenantData(restaurantId);
-  if (existing !== null) return existing.products;
+const storageKey = (restaurantId: string) => `products_${restaurantId}`;
 
-  const k = buildTenantStorageKeys(restaurantId);
+export function loadLocalProducts(restaurantId: string): Product[] | null {
   try {
-    const raw = localStorage.getItem(k.products);
-    if (raw === null) return null;
-    const p = JSON.parse(raw) as Product[];
-    if (!Array.isArray(p)) return null;
-    return scopeProducts(p, k.restaurantId);
+    const data = localStorage.getItem(storageKey(restaurantId));
+    if (data === null) return null;
+    const products = JSON.parse(data) as Product[];
+    if (!Array.isArray(products)) return null;
+    return products.map((product) => ({ ...product, restaurant_id: restaurantId }));
   } catch {
     return null;
   }
 }
 
 export function saveLocalProducts(restaurantId: string, products: Product[]): void {
-  const k = buildTenantStorageKeys(restaurantId);
-  const data = loadTenantDataOrLegacy(restaurantId);
-  saveTenantData(restaurantId, {
-    ...data,
-    products: scopeProducts(products, k.restaurantId),
-  });
-  emitAdminHub(k.restaurantId, 'products');
-}
-
-export function getAdminProductsOrInitial(restaurantId: string): Product[] {
-  const data = loadTenantData(restaurantId);
-  if (data !== null) return data.products;
-
-  const k = buildTenantStorageKeys(restaurantId);
-  const local = loadLocalProducts(restaurantId);
-  if (local !== null) return local;
-  return scopeProducts(mockProducts, k.restaurantId);
+  localStorage.setItem(storageKey(restaurantId), JSON.stringify(products));
+  emitAdminHub(restaurantId, 'products');
 }
 
 export async function loadProductsForAdmin(restaurantId: string): Promise<Product[]> {
-  if (isSupabaseConfigured()) {
-    return sbFetchProducts(restaurantId);
-  }
-  return getAdminProductsOrInitial(restaurantId);
+  const products = loadLocalProducts(restaurantId);
+  if (products !== null) return products;
+  return mockProducts.map((product) => ({ ...product, restaurant_id: restaurantId }));
 }
 
 export async function persistProductsForAdmin(
@@ -57,11 +34,6 @@ export async function persistProductsForAdmin(
   if (!restaurantId?.trim()) {
     console.error('[ProductsRepo] restaurant_id inválido. Não será possível salvar produtos.', restaurantId);
     throw new Error('restaurant_id inválido para salvar produtos');
-  }
-  if (isSupabaseConfigured()) {
-    await sbSyncProducts(restaurantId, products);
-    emitAdminHub(restaurantId, 'products');
-    return;
   }
   saveLocalProducts(restaurantId, products);
 }
